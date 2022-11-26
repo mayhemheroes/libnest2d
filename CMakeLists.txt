@@ -19,12 +19,20 @@ option(BUILD_SHARED_LIBS "Build shared libs instead of static (applies for depen
 
 option(LIBNEST2D_HEADER_ONLY "If enabled static library will not be built." ON)
 
+option(MAYHEM "If enabled, the mayhem harness will be built." OFF)
+
 set(GEOMETRY_BACKENDS clipper boost eigen)
 set(LIBNEST2D_GEOMETRIES clipper CACHE STRING "Geometry backend")
 set_property(CACHE LIBNEST2D_GEOMETRIES PROPERTY STRINGS ${GEOMETRY_BACKENDS})
 list(FIND GEOMETRY_BACKENDS ${LIBNEST2D_GEOMETRIES} GEOMETRY_TYPE)
 if(${GEOMETRY_TYPE} EQUAL -1)
     message(FATAL_ERROR "Option ${LIBNEST2D_GEOMETRIES} not supported, valid entries are ${GEOMETRY_BACKENDS}")
+endif()
+
+if (${MAYHEM})
+    # Add fuzzer-no-link to compile and ld flags
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined,fuzzer-no-link")
+    add_subdirectory(mayhem)
 endif()
 
 set(OPTIMIZERS nlopt optimlib)
