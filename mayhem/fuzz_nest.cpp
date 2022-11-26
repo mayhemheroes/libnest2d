@@ -39,6 +39,11 @@ extern "C" [[maybe_unused]] int LLVMFuzzerTestOneInput(const uint8_t *data, std:
         nest(input1, Box(fdp.ConsumeIntegral<uint16_t>(), fdp.ConsumeIntegral<uint16_t>()));
     } catch (const ClipperLib::clipperException &e) {
         // Ignore clipper exceptions
+        return -1;
+    }
+    catch (const GeometryException &e) {
+        // Ignore geometry exceptions
+        return -1;
     }
     return 0;
 }
