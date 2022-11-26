@@ -34,7 +34,11 @@ auto generate_random_item_vector(FuzzedDataProvider& fdp) -> std::vector<Item> {
 
 extern "C" [[maybe_unused]] int LLVMFuzzerTestOneInput(const uint8_t *data, std::size_t size) {
     FuzzedDataProvider fdp(data, size);
-    auto input1 = generate_random_item_vector(fdp);
-    nest(input1, Box(fdp.ConsumeIntegral<uint16_t>(), fdp.ConsumeIntegral<uint16_t>()));
+    try {
+        auto input1 = generate_random_item_vector(fdp);
+        nest(input1, Box(fdp.ConsumeIntegral<uint16_t>(), fdp.ConsumeIntegral<uint16_t>()));
+    } catch (const ClipperLib::clipperException &e) {
+        // Ignore clipper exceptions
+    }
     return 0;
 }
