@@ -1,0 +1,127 @@
+# ============================================================================
+# RLENV Patch Playground - Single-Stage Build
+# ============================================================================
+# Project: libnest2d
+# Original image: ghcr.io/mayhemheroes/libnest2d:master
+# Git revision: d834e37892e82c7c5b814b3740e1949e0a9c73c3
+# Target executable: /fuzz_libnest
+
+# ============================================================================
+# 1. Base Image Selection
+# ============================================================================
+FROM --platform=linux/amd64 ubuntu:22.04
+
+# ============================================================================
+# 2. System Dependencies (merge ALL stages from original Dockerfile)
+# ============================================================================
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    clang \
+    cmake \
+    libboost-dev \
+    libpolyclipping-dev \
+    libnlopt-cxx-dev \
+    libpolyclipping22 \
+    libnlopt0 \
+    libc6-i386 \
+    lib32gcc-s1 \
+    libc6 \
+    libgcc-s1 \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
+
+# REQUIRED: jq is used by validate.sh to parse metadata.json
+
+# ============================================================================
+# 3. Copy MTV Binary (REQUIRED - used by validate.sh)
+# ============================================================================
+COPY --from="us-east4-docker.pkg.dev/forallsecure-1/rlenv-staging/rlenv-mcp-static:latest" \
+     /rlenv/bin/mtv /rlenv/bin/mtv
+
+# MTV (Mayhem Test & Verify) is required for validation and crash triage
+
+# ============================================================================
+# 4. Language-Specific Setup
+# ============================================================================
+# C++ with CMake and libFuzzer
+ENV FUZZING_LANGUAGE=c++
+ENV CXX=clang++
+ENV CC=clang
+
+# ============================================================================
+# 5. Copy Source Code (EARLY - source exists now)
+# ============================================================================
+COPY . /rlenv/source/libnest2d/
+
+# IMPORTANT: This copies the entire repository to /rlenv/source/libnest2d/
+
+# ============================================================================
+# 6. Make Source World-Writable (REQUIRED for non-root rebuilds)
+# ============================================================================
+RUN chmod -R 777 /rlenv/source
+
+# Why 777? Validation runs as UID 1000 (unprivileged user)
+# Must be able to modify source code and rebuild
+
+# ============================================================================
+# 7. Set Working Directory
+# ============================================================================
+WORKDIR /rlenv/source/libnest2d/
+
+# All subsequent RUN commands execute from this directory
+
+# ============================================================================
+# 8. Install Language Dependencies (if any)
+# ============================================================================
+# No additional language dependencies needed - using system packages
+
+# ============================================================================
+# 9. Build Application (extract from original Dockerfile)
+# ============================================================================
+RUN cmake . -DLIBNEST2D_HEADER_ONLY=OFF -DMAYHEM=1
+RUN make -j$(nproc)
+
+# ============================================================================
+# 10. Copy Artifacts to Expected Locations
+# ============================================================================
+RUN cp mayhem/fuzz_libnest /fuzz_libnest
+
+# ============================================================================
+# 11. Permission Management (REQUIRED)
+# ============================================================================
+# Make ALL files in source directory writable (including CMake-generated files)
+# This must happen AFTER the build so CMake-generated files are included
+RUN chmod -R 777 /rlenv/source
+
+# Target executable (rwxrwxrwx - must be 777 so unprivileged user can overwrite)
+RUN chmod 777 /fuzz_libnest
+
+# Build output directory
+RUN chmod -R 777 /out 2>/dev/null || true
+
+# ============================================================================
+# 12. Copy rlenv Directory (MUST BE NEAR END - doesn't exist yet!)
+# ============================================================================
+COPY rlenv /rlenv
+
+# CRITICAL: This directory doesn't exist when you create this Dockerfile
+# It's populated later by the `rlenv patch` command
+# That's why it must come AFTER source copy and build
+
+# ============================================================================
+# 13. Final Permission Fix (REQUIRED)
+# ============================================================================
+RUN chmod -R 777 /rlenv/source
+
+# Ensures source remains writable after rlenv directory copy
+
+# ============================================================================
+# 14. Set Entry Point
+# ============================================================================
+CMD ["/fuzz_libnest"]
+
+# Use the same path as in metadata.json
+
+# ============================================================================
+# 15. Reset Working Directory
+# ============================================================================
+WORKDIR /

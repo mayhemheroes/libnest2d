@@ -1,0 +1,11 @@
+project: mayhemheroes/libnest2d
+target: nest-fuzz
+
+cmds:
+  - cmd: /fuzz_libnest
+    libfuzzer: true
+    env: {}
+image: ghcr.io/mayhemheroes/libnest2d@sha256:ce101b1bb2fb1f19e2ddba233fc6895c3fb2eac9192dcee04e540826f73eee65
+duration: 300
+testsuite:
+  - https://app.mayhem.security/mayhemheroes/libnest2d/nest-fuzz/testsuite.tar

@@ -1,0 +1,12 @@
+{
+  "workspace": "mayhemheroes",
+  "project": "libnest2d",
+  "target": "nest-fuzz",
+  "run_id": "1",
+  "ci_url": "https://github.com:443/mayhemheroes/libnest2d//actions/runs/3858093447",
+  "run_image_name": "ghcr.io/mayhemheroes/libnest2d:master",
+  "run_image_with_digest": "ghcr.io/mayhemheroes/libnest2d@sha256:ce101b1bb2fb1f19e2ddba233fc6895c3fb2eac9192dcee04e540826f73eee65",
+  "git_repo_url": "git@github.com:mayhemheroes/libnest2d.git",
+  "git_revision": "d834e37892e82c7c5b814b3740e1949e0a9c73c3",
+  "target_executable": "/fuzz_libnest"
+}
