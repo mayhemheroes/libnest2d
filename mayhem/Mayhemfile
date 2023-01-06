@@ -1,0 +1,6 @@
+project: libnest2d
+target: nest-fuzz
+
+cmds:
+  - cmd: /fuzz_libnest
+    libfuzzer: true
